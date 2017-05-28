@@ -4,6 +4,7 @@ import org.menesty.jnr.serialport.driver.SerialPortDriver;
 
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Objects;
 
 /**
  * Created by Menesty
@@ -19,7 +20,8 @@ public class SerialPortIdentifier {
   }
 
   public SerialPort open(String stringOwner, PortMode portMode) {
-    return new SerialPort(driver.openPort(portInformation.getName(), portMode), driver);
+    Objects.requireNonNull(portMode, "Port mode can't be null");
+    return new SerialPort(driver.openPort(portInformation.getName(), portMode), portMode, driver);
   }
 
   public String getName() {

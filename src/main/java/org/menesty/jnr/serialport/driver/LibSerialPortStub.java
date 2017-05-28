@@ -1,6 +1,7 @@
 package org.menesty.jnr.serialport.driver;
 
 import jnr.ffi.Pointer;
+import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
 import jnr.ffi.byref.PointerByReference;
 import jnr.ffi.types.size_t;
@@ -66,7 +67,7 @@ public interface LibSerialPortStub {
 
   String sp_last_error_message();
 
-  SpReturn sp_set_config(SpPort spPort, SpPortConfig spPortConfig);
+  SpReturn sp_set_config(SpPort spPort, @In SpPortConfig spPortConfig);
 
   SpReturn sp_set_config_baudrate(SpPortConfig spPortConfig, @u_int8_t int speed);
 

@@ -27,9 +27,9 @@ public class TestSerialPort {
   }
 
 
- // @Test
+  @Test
   public void connectToSerialPort() {
-    String portName = "/dev/cu.usbserial-00001014A";
+    String portName = "/dev/cu.usbserial-00002014A";
 
     SerialPortIdentifier portIdentifier = SerialPortIdentifier.getPortIdentifier(portName);
 
@@ -38,6 +38,8 @@ public class TestSerialPort {
 
       serialPort.setPortParams(PORT_SPEED, PORT_DATA_BITS, PORT_STOP_BITS, PORT_PARITY);
       serialPort.close();
+
+      System.out.println("done");
     }
 
   }

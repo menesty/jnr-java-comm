@@ -23,11 +23,12 @@ public class SerialPort {
   private final SerialInputStream serialInputStream;
   private final SerialOutputStream serialOutputStream;
 
-  SerialPort(SpPort spPort, SerialPortDriver driver) {
+  SerialPort(SpPort spPort, PortMode portMode, SerialPortDriver driver) {
     this.spPort = spPort;
     this.driver = driver;
-    serialInputStream = new SerialInputStream();
-    serialOutputStream = new SerialOutputStream();
+
+    serialInputStream = PortMode.READ == portMode || PortMode.READ_WRITE == portMode ? new SerialInputStream() : null;
+    serialOutputStream = PortMode.WRITE == portMode || PortMode.READ_WRITE == portMode ? new SerialOutputStream() : null;
   }
 
   public void enableReceiveTimeout(int readTimeOut) {
@@ -111,7 +112,7 @@ public class SerialPort {
       write(new byte[]{(byte) b});
     }
 
-    private void drain() {
+    private void drain() throws IOException {
       int waitingByteNumbers = driver.getWatingForWriteBytes(spPort);
       while (waitingByteNumbers != 0) {
         driver.waitWriteFinish(eventSet, writeTimeOut);

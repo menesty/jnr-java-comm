@@ -10,6 +10,7 @@ import org.menesty.jnr.serialport.SerialPortConfiguration;
 import org.menesty.jnr.serialport.SerialPortEvent;
 import org.menesty.jnr.serialport.exception.SerialPortException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +36,7 @@ public class SerialPortDriver {
       int offset = 0;
       int addressSize = ptr.getRuntime().addressSize();
 
-      /*need check offset +1 position because address byte can start from 0*/
+      /*need check offset +1 position because address can start from 0*/
       while (ptr.getByte(offset) != 0 || ptr.getByte(offset + 1) != 0) {
         SpPort port = new SpPort(Runtime.getRuntime(libSerialPortStub), ptr.getPointer(offset));
 
@@ -72,7 +73,6 @@ public class SerialPortDriver {
     }
   }
 
-
   static {
     instance = new SerialPortDriver();
     instance.initialize();
@@ -100,6 +100,8 @@ public class SerialPortDriver {
   }
 
   public void setPortConfiguration(final SpPort spPort, SerialPortConfiguration portConfig) {
+/*
+    //very often get: No such file or directory , error code: SP_ERR_ARG
     PointerByReference pbr = new PointerByReference();
     checkActionResult(libSerialPortStub.sp_new_config(pbr), "Failed create port configuration");
 
@@ -112,10 +114,16 @@ public class SerialPortDriver {
       checkActionResult(libSerialPortStub.sp_set_config_stopbits(spPortConfig, portConfig.getStopBits()), "Failed set stop bits to SpPortConfig");
 
       checkActionResult(libSerialPortStub.sp_set_config(spPort, spPortConfig), "Failed set port configuration");
-    } catch (Exception e) {
+    } finally {
       libSerialPortStub.sp_free_config(spPortConfig);
-      throw e;
     }
+*/
+
+    setBaudrate(spPort, portConfig.getSpeed());
+    setBits(spPort, portConfig.getBits());
+    setParity(spPort, portConfig.getParity());
+    setSopBits(spPort, portConfig.getStopBits());
+
   }
 
   public void setBaudrate(SpPort spPort, int baudrate) {
@@ -139,11 +147,28 @@ public class SerialPortDriver {
       return true;
     }
 
-    throw new SerialPortException(errorMessage, libSerialPortStub.sp_last_error_message());
+    throw new SerialPortException(errorMessage, libSerialPortStub.sp_last_error_message(), spReturn.name());
   }
 
-  public int getByteReadyInput(SpPort spPort) {
-    return libSerialPortStub.sp_input_waiting(spPort);
+  private int checkActionResult(int spReturn, String errorMessage) {
+    if (spReturn >= 0) {
+      return spReturn;
+    }
+
+    checkActionResult(SpReturn.getByValue(spReturn), errorMessage);
+    return 0;
+  }
+
+  private int checkActionResultThrowIOException(int spReturn, String errorMessage) throws IOException {
+    try {
+      return checkActionResult(spReturn, errorMessage);
+    } catch (SerialPortException e) {
+      throw new IOException(e);
+    }
+  }
+
+  public int getByteReadyInput(SpPort spPort) throws IOException {
+    return checkActionResultThrowIOException(libSerialPortStub.sp_input_waiting(spPort), "Failed get number of bytes waiting for read");
   }
 
   public Pointer addEventListener(SpPort spPort, SerialPortEvent readReady) {
@@ -153,7 +178,7 @@ public class SerialPortDriver {
 
     try {
       checkActionResult(libSerialPortStub.sp_add_port_events(eventSetPointer, spPort, SpEvent.values()[readReady.ordinal()]), "Failed add event set to port");
-    } catch (Exception e) {
+    } catch (SerialPortException e) {
       libSerialPortStub.sp_free_event_set(eventSetPointer);
       throw e;
     }
@@ -165,28 +190,31 @@ public class SerialPortDriver {
     libSerialPortStub.sp_free_event_set(eventSetPointer);
   }
 
-  public void nonBlockingRead(SpPort spPort, byte[] bytes, int length) {
-    int operationResult = libSerialPortStub.sp_nonblocking_read(spPort, bytes, length);
-
-    if (operationResult < 0) {
-      checkActionResult(SpReturn.getByValue(operationResult), "Failed read bytes from port");
-    }
+  /**
+   * @return The number of bytes read on success, or throw IOException.
+   * The number of bytes returned may be any number from zero to the maximum that was requested.
+   **/
+  public int nonBlockingRead(SpPort spPort, byte[] bytes, int length) throws IOException {
+    return checkActionResultThrowIOException(libSerialPortStub.sp_nonblocking_read(spPort, bytes, length), "Failed read bytes from port");
   }
 
   public void waitForPortData(Pointer eventSet, int readTimeOut) {
     checkActionResult(libSerialPortStub.sp_wait(eventSet, readTimeOut), "Failed read bytes from port");
   }
 
-  public void nonBlockingWrite(SpPort spPort, byte[] buff, int count) {
-    int operationResult = libSerialPortStub.sp_nonblocking_write(spPort, buff, count);
-
-    if (operationResult < 0) {
-      checkActionResult(SpReturn.getByValue(operationResult), "Failed read bytes from port");
-    }
+  /**
+   * @return The number of bytes written on success, or throw IOException.
+   * The number of bytes returned may be any number from zero to the maximum that was requested.
+   **/
+  public int nonBlockingWrite(SpPort spPort, byte[] buff, int count) throws IOException {
+    return checkActionResultThrowIOException(libSerialPortStub.sp_nonblocking_write(spPort, buff, count), "Failed read bytes from port");
   }
 
-  public int getWatingForWriteBytes(SpPort spPort) {
-    return libSerialPortStub.sp_output_waiting(spPort);
+  /**
+   * @return Number of bytes waiting on success, or throw IOException.
+   **/
+  public int getWatingForWriteBytes(SpPort spPort) throws IOException {
+    return checkActionResultThrowIOException(libSerialPortStub.sp_output_waiting(spPort), "Failed get number of bytes waiting");
   }
 
   public void waitWriteFinish(Pointer eventSet, long writeTimeOut) {
