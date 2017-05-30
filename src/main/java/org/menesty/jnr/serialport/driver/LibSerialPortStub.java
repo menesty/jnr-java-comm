@@ -69,11 +69,12 @@ public interface LibSerialPortStub {
 
   SpReturn sp_set_config(SpPort spPort, @In SpPortConfig spPortConfig);
 
-  SpReturn sp_set_config_baudrate(SpPortConfig spPortConfig, @u_int8_t int speed);
+  SpReturn sp_set_config_baudrate(@In SpPortConfig spPortConfig, @u_int8_t int speed);
 
-  SpReturn sp_set_config_bits(SpPortConfig spPortConfig, int bits);
+  SpReturn sp_set_config_bits(@In SpPortConfig spPortConfig, int bits);
 
-  SpReturn sp_set_config_parity(SpPortConfig spPortConfig, SpParity spParity);
+  SpReturn sp_set_config_parity(@In SpPortConfig spPortConfig, SpParity spParity);
 
-  SpReturn sp_set_config_stopbits(SpPortConfig spPortConfig, int stopBits);
+  SpReturn sp_set_config_stopbits(@In SpPortConfig spPortConfig, int stopBits);
+
 }

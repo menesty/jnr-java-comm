@@ -5,6 +5,14 @@ package org.menesty.jnr.serialport;
  * on 5/26/17.
  */
 public class SerialPortConfiguration {
+  public static final int DATA_BITS_5 = 5;
+  public static final int DATA_BITS_6 = 6;
+  public static final int DATA_BITS_7 = 7;
+  public static final int DATA_BITS_8 = 8;
+  public static final int STOP_BITS_1 = 1;
+  public static final int STOP_BITS_2 = 2;
+  public static final int STOP_BITS_1_5 = 3;
+
   public enum Parity {
     INVALID, NONE, ODD, EVEN, MARK, SPACE
   }

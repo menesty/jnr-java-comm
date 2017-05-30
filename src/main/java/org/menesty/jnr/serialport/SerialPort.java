@@ -43,9 +43,9 @@ public class SerialPort {
     return serialOutputStream;
   }
 
-  public void close() {
-    driver.freeEventSet(serialInputStream.eventSet);
-    driver.freeEventSet(serialOutputStream.eventSet);
+  public void close() throws IOException {
+    serialInputStream.close();
+    serialOutputStream.close();
     driver.closePort(spPort);
   }
 
@@ -59,6 +59,7 @@ public class SerialPort {
 
   private class SerialInputStream extends InputStream {
     private Pointer eventSet;
+    private boolean closed;
 
     SerialInputStream() {
       eventSet = driver.addEventListener(spPort, SerialPortEvent.READ_READY);
@@ -83,10 +84,13 @@ public class SerialPort {
 
     @Override
     public int read(byte[] buff) throws IOException {
+      checkStreamClose();
+
       int availableNumberBytes = driver.getByteReadyInput(spPort);
 
       if (availableNumberBytes == 0) {
         driver.waitForPortData(eventSet, readTimeOut);
+        checkStreamClose();
         availableNumberBytes = driver.getByteReadyInput(spPort);
       }
 
@@ -98,10 +102,24 @@ public class SerialPort {
 
       return length;
     }
+
+    @Override
+    public void close() throws IOException {
+      super.close();
+      closed = true;
+      driver.freeEventSet(eventSet);
+    }
+
+    void checkStreamClose() throws IOException {
+      if (closed) {
+        throw new IOException("stream closed");
+      }
+    }
   }
 
   private class SerialOutputStream extends OutputStream {
     private Pointer eventSet;
+    private boolean closed;
 
     SerialOutputStream() {
       eventSet = driver.addEventListener(spPort, SerialPortEvent.WRITE_READY);
@@ -113,6 +131,7 @@ public class SerialPort {
     }
 
     private void drain() throws IOException {
+
       int waitingByteNumbers = driver.getWatingForWriteBytes(spPort);
       while (waitingByteNumbers != 0) {
         driver.waitWriteFinish(eventSet, writeTimeOut);
@@ -121,8 +140,22 @@ public class SerialPort {
 
     @Override
     public void write(byte[] buff) throws IOException {
+      System.out.print("Write data to serial port: ");
+
+      for (byte aBuff : buff) {
+        System.out.print(aBuff);
+      }
+      System.out.println();
+
       driver.nonBlockingWrite(spPort, buff, buff.length);
       drain();
+    }
+
+    @Override
+    public void close() throws IOException {
+      super.close();
+      closed = true;
+      driver.freeEventSet(eventSet);
     }
   }
 }

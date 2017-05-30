@@ -65,9 +65,20 @@ public class SerialPortDriver {
     return instance;
   }
 
+  public interface LibC {
+    int putenv(String value);
+  }
+
+
   private void initialize() {
     try {
+
+      LibC libc = LibraryLoader.create(LibC.class).load("c");
+
+      libc.putenv("LIBSERIALPORT_DEBUG=true");
+
       libSerialPortStub = LibraryLoader.create(LibSerialPortStub.class).load(LIBRARY_NAME);
+
     } catch (UnsatisfiedLinkError e) {
 
     }
@@ -100,9 +111,9 @@ public class SerialPortDriver {
   }
 
   public void setPortConfiguration(final SpPort spPort, SerialPortConfiguration portConfig) {
-/*
+
     //very often get: No such file or directory , error code: SP_ERR_ARG
-    PointerByReference pbr = new PointerByReference();
+   /* PointerByReference pbr = new PointerByReference();
     checkActionResult(libSerialPortStub.sp_new_config(pbr), "Failed create port configuration");
 
     SpPortConfig spPortConfig = new SpPortConfig(Runtime.getRuntime(libSerialPortStub), pbr.getValue());
@@ -123,7 +134,6 @@ public class SerialPortDriver {
     setBits(spPort, portConfig.getBits());
     setParity(spPort, portConfig.getParity());
     setSopBits(spPort, portConfig.getStopBits());
-
   }
 
   public void setBaudrate(SpPort spPort, int baudrate) {

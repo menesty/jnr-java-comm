@@ -2,6 +2,7 @@ package org.menesty.jnr.serialport;
 
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.Enumeration;
 
 /**
@@ -27,8 +28,8 @@ public class TestSerialPort {
   }
 
 
-  @Test
-  public void connectToSerialPort() {
+  //@Test
+  public void connectToSerialPort() throws IOException {
     String portName = "/dev/cu.usbserial-00002014A";
 
     SerialPortIdentifier portIdentifier = SerialPortIdentifier.getPortIdentifier(portName);
